@@ -72,11 +72,11 @@ namespace CoHEF
                 }
                 else if (arg.Equals("-daemonmode"))
                 {
-                    //Console.WriteLine("Entered daemonmode..");
                     bool steamapi_state = SteamAPI.Init();
                     bool achievements_state = SteamUserStats.RequestCurrentStats();
-                    //SteamUserStats.ResetAllStats(true); // Use this to reset all achievements
-                    //SteamUserStats.StoreStats();
+                    // Use this to reset all achievements
+                    // SteamUserStats.ResetAllStats(true); 
+                    // SteamUserStats.StoreStats();
                     // Stuff we need for the loop
                     int timer = 0;
                     Process[] coh_processes;
@@ -85,7 +85,6 @@ namespace CoHEF
 
                     // Prepare in case we have more than two processes
                     string wmiQuery = string.Format("select ProcessId, Name, CommandLine from Win32_Process where Name='{0}'", cohfilename);
-                    //Console.WriteLine("After Query..");
                     // Start scanning for RelicCOH.exe
                     while (true)
                     {
@@ -127,8 +126,7 @@ namespace CoHEF
                             Environment.Exit(1);
                         }
                     }
-                endOfLoop:
-                    //Console.WriteLine("After Find Loop..");
+                    endOfLoop:
                     if (steamapi_state)
                     {
                         // Update steamid
@@ -143,16 +141,16 @@ namespace CoHEF
                         }
                         File.WriteAllLines(scarfile, lines);
                     }
-                    //Console.WriteLine("After SteamID Set..");
+                    
                     if (steamapi_state && achievements_state)
                     {
+                        // Both api and achievements are active 
                         int checkrate = 4000;
                         DateTime dt_before = File.GetLastWriteTime(file);
                         DateTime dt_after = File.GetLastWriteTime(file);
-                        // Both api and achievements are active 
                         while (!Unique_Process.HasExited)
                         {
-                            //Console.WriteLine("Inside loop..");
+                            // Check if the pipeline.dat has been edited
                             dt_before = File.GetLastWriteTime(file);
                             if (dt_before != dt_after)
                             {
@@ -164,31 +162,23 @@ namespace CoHEF
 
                                     if (lines.Length > 0)
                                     {
-                                        //Console.WriteLine("Decoding line...");
                                         // Decode the line
                                         RootObject converted = JsonConvert.DeserializeObject<RootObject>(lines[0]);
                                         List<List<string>> achievements_bool = add_properties(converted);
                                         bool changes = false;
                                         // Iterate the boolean achievements
-                                        //Console.WriteLine("Iterating achievements...");
                                         foreach (List<string> list in achievements_bool)
                                         {
-                                            //Console.WriteLine("Checking achievement...");
-                                            //Console.WriteLine(String.Join(", ", list.ToArray()));
-                                            if (list[1].Equals("1")) // Did he get the achievement? index 1 is always the achievement status
+                                            if (list[1].Equals("1")) // Did he/she get the achievement? index 1 is always the achievement status
                                             {
                                                 string api_name = list[0]; // index 0 is always the achievement api_name
                                                 if (SteamUserStats.SetAchievement(api_name))
-                                                {
-                                                    //Console.WriteLine("Setting achievement...");
                                                     changes = true; // Set true, so we will commit after we iterated all achievements
-                                                }
                                             }
                                         }
 
                                         if (changes)
                                         {
-                                            //Console.WriteLine("Commiting changes...");
                                             SteamUserStats.StoreStats();
                                             changes = false;
                                         }
@@ -269,7 +259,8 @@ namespace CoHEF
 
             Process[] steam_processes;
             // Tell server that we started the game
-            try { 
+            try
+            { 
                 webClient.DownloadStringAsync(new Uri(url));
             }
             catch (Exception) {
@@ -289,10 +280,7 @@ namespace CoHEF
             {
                 // Message box "Multiple Steam processes found!"
                 if (MessageBox.Show("Multiple Steam processes found! This may lead to unexpected behaviour! Continue?", "Company of Heroes: Eastern Front", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
-                {
-                    // User chose to abort
-                    Environment.Exit(0);
-                }
+                    Environment.Exit(0); // User chose to abort
             }
 
             string steam_fullPath = steam_processes[0].MainModule.FileName;
@@ -326,14 +314,15 @@ namespace CoHEF
             Process EFDaemon = new Process();
             EFDaemon.StartInfo.FileName = "EFDaemon.exe";
             EFDaemon.StartInfo.Arguments = "-daemonmode";
-            try {
+            try
+            {
                 EFDaemon.Start();
             }
-            catch (System.ComponentModel.Win32Exception) {
+            catch (System.ComponentModel.Win32Exception)
+            {
                 EFDaemon.StartInfo.FileName = "EF_Bin\\EFDaemon.exe";
                 EFDaemon.Start();
             }
-            Environment.Exit(0);
         }
 
         public static string getscardir()
@@ -374,10 +363,11 @@ namespace CoHEF
             string line;
             StreamReader file;
             // Open file and read lines
-            try {
+            try
+            {
                 file = new StreamReader(path_to_locale);
             }
-            catch (DirectoryNotFoundException e)
+            catch (DirectoryNotFoundException)
             {
                 path_to_dir = Path.GetFullPath(Path.Combine(path_to_dir, @"..\"));
                 path_to_locale = path_to_dir + "\\EF_beta\\Locale\\English\\Eastern_Front.English.ucs";
