@@ -38,7 +38,7 @@ namespace CoHEF
         private static string cohfilename2 = "RelicCoH.exe";
         private static string bugsplat_report = "BsSndRpt";
         private static string ef_version_locale_key = "18030216";
-        private static string auth_key = "wd3DEcjqgeYqFWTUWsS6r37ja62F2EzZBGZnar9hSfNULp3hXXvUJdxY9qKrG7a9eEqAvmr6ucPRAaU5LD99ep6huyUysV7YuYBpmwWASVajk3g9JUqdtRhQbN8kCgueZnNWxQ8LhbSAF4JeUSSAvU4P4PmgGkkpzXUtnYwqt55FbJ9LyNJvc9WWNnbWz3WVpvpHvaufdrKAkUtgvvuAjpvPu3qAtRxjCGVkVeGpXJmenzcCRKCfmcZuYBBVZxJ32Xa87m45mwEjCQvaKmGf5qtkZcgvCpSdNqKWtsFCgcJSFZg6mgWfuVUFfZ3VP6D47NQAwVrdL9AYLHtSwQvv2VSQTzjEfz6J9TssE4gw2bvmugEkWGKGBDX6m6cPGv4v2AhGR4xjwkky25HYz7D7j4y2AYwqZQ8uYa2pnLj2qT3Wwx9zrk8F4czSBzpDhz6kfqZJvnXRXBCWSZsaKsuykSSs2BjAKvfnfTwVwYYz3pBCwBdWeVrrSmX34Xv26ZQT";
+        private static string auth_key = ""; // Removed for GitHub release
 
         // NOTE: -unqiuetoken is only a "marker" to find the right process in case of more than one RelicCoH Process
         private static string steamarguments = "-applaunch 228200 -dev -mod EF_beta -uniquetoken";
