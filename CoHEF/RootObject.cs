@@ -1,11 +1,56 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace CoHEF
 {
+    // This has to match the pipeline.dat lua table:
+    // "lua_name" = { "steamachievement_name", "achievement_status" }
+    // feld_steiner = { "landser_elite", "0" }
+    // As an example here is the EF table:
+    /*
+    achievements_tbl = {
+		    feld_steiner = { "landser_elite", "0" },
+		    hitler_cats = { "fuhrer_katzen", "0" },
+		    red_army = { "red_wave", "0" },
+		    woroshilov = { "woroshilov_kv2", "0" },
+		    saizew = { "saizew_sniper", "0" },
+		    danko = { "danko_callin", "0" },
+		    isu = { "isu_jager", "0" },
+		    grup_steiner = { "angriff_steiner", "0" },
+		    wittmann = { "wittmann_tiger", "0" },
+		    soviet_prod = { "soviet_industry", "0" },
+		    kv1 = { "kolobanov", "0" },
+		    oneman = { "onemanarmy", "0" },
+		    jeep = { "jeepconstruction", "0" },
+		    bigcats = { "bigcats", "0" },
+		    furysherman = { "bradpittfury", "0" },
+		    furytiger = { "bradpitttiger", "0" },
+		    rushberlin = { "rushberlin", "0" },
+		    mohairborne = { "medalofhonorairborne", "0" },
+		    mg42 = { "mg42", "0" },
+		    collateral = { "collateral", "0" },
+		    stransky = { "stransky", "0" },
+		    is2construction = { "is2construction", "0" },
+		    jungleking = { "jungleking", "0" },
+		    stormtiger = { "stormtiger", "0" },
+		    pershing = { "pershing", "0" },
+		    hummel = { "hummel", "0" },
+		    lendlease = { "lendlease", "0" },
+		    volkssturm = { "volkssturm", "0" },
+		    compstomp = { "compstomp", "0" },
+		    pershing2 = { "pershing2", "0" },
+		    churchill = { "churchill", "0" },
+		    wolverine = { "wolverine", "0" },
+		    crazywilly = { "crazywilly", "0" },
+		    bergetiger = { "bergetiger", "0" },
+		    kettenkrad = { "kettenkrad", "0" },
+		    beutepanzer = { "beutepanzer", "0" },
+		    bledforthis = { "bledforthis", "0" },
+		    downfall = { "downfall", "0" },
+		    r_btn = { "no_reinforce", "0" },
+		    heroes = { "su_heroes", "0" },
+		    vet4 = { "oh_heroes", "0" }
+	    }
+    */
     public class RootObject
     {
         public List<string> feld_steiner { get; set; }
