@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoHEF", "CoHEF\CoHEF.csproj", "{38B49211-1D4D-40A0-AB61-01C2382A1B02}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EFDaemon", "..\Eastern Front Launcher v3.0\Eastern Front Launcher v3.0\Eastern Front Launcher\EFDaemon.csproj", "{1C5B7C08-5A77-41B6-9274-438F2E932860}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EFDaemon", "EFDaemon\EFDaemon.csproj", "{1C5B7C08-5A77-41B6-9274-438F2E932860}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
