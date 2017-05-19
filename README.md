@@ -38,6 +38,7 @@ The launcher uses the [Steamworks.NET API library](https://steamworks.github.io/
 You will need to adapt the lua table in the _achievements.scar_ to correctly represent the achievement of your mod:
 
 "lua_name" = { "steamachievement_name", "achievement_status" }
+
 Example: feld_steiner = { "landser_elite", "0" }
 
 Then obviously you will be required to add or modify the triggers to fit your preferences. Any function from the SCAR doc is fair game.
