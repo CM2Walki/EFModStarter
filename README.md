@@ -12,7 +12,7 @@ This project was created to implement and use the Steamworks API in a Company of
 
 To fully grasp the structure of the program, we first have to look at the way Steam used to display the currently played game:
 
-**Old** System (FCFS, the first game to launch is displayed as being played):
+d**Old** System (FCFS, the first game to launch is displayed as being played):
 1. Start mod _.bat/.exe_ via Steam
 2. Steam recognises _.bat/.exe_ as parent process
 3. Steamfriends displays the mod
@@ -22,7 +22,7 @@ To fully grasp the structure of the program, we first have to look at the way St
 2. Company of Heroes (New Steam Version), a Steam game, gets launched
 3. Steamfriends displays Company of Heroes (New Steam Version)
 
-# The Workaround
+e# The Workaround
 To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts the _CoHEF.exe_ after a fixed delay, for it then to reclaim it's spot as the last game launched. In the end we end up with a structure like this:
 
 1. Start _CoHEF.exe_
@@ -62,7 +62,7 @@ string url = "http://me2stats.eu:5020/join?version=" + version_string + "&key=" 
 webClient.DownloadStringAsync(new Uri(url));
 ```
 
-It gives us an approximated number of players online, as well as record game crashes (so that we can act fast if something breaks). The probability that you might need this code is very low, so just get rid off it. If you are really interested in the webAPI code, just drop me a private message.
+It gives us an approximated number of players online, as well as recorded game crashes (so that we can act fast if something breaks). The probability that you might need this code is very low, so just get rid off it. If you are really interested in the webAPI code, just drop me a private message.
 
 ### Donate
 I did this in my spare time in the interest of all CoH1 mods. If one thinks I deserve a reward for this, then go ahead and follow this button:
