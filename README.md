@@ -54,7 +54,14 @@ Note that you need to place the steam_api.dll in a seperate folder (EF uses EF_B
 This approach is really unsafe, as the player can simply edit the associated .scar files or even the _pipeline.dat_ to quickly unlock all achievements. If one feels fancy, he might want to implement some encryption.
 
 # The WebAPI 
-In the C# sourcecode you will find some code regarding simple HTTP requests to our diagnostics database. It gives us an approximated number of players online, as well as record game crashes (so that we can act fast if something breaks). The probability that you might need this code is very low, so just get rid off it. If you are really interested in the webAPI code, I can provide that as well.
+In the C# sourcecode you will find some code regarding simple HTTP requests to our diagnostics database:
+
+```C#
+    var webClient = new System.Net.WebClient();
+    string url = "http://me2stats.eu:5020/join?version=" + version_string + "&key=" + auth_key;
+```
+
+It gives us an approximated number of players online, as well as record game crashes (so that we can act fast if something breaks). The probability that you might need this code is very low, so just get rid off it. If you are really interested in the webAPI code, just drop me a private message.
 
 ### Donate
 I did this in my spare time in the interest of all CoH1 mods. If one thinks I deserve a reward for this, then go ahead and follow this button:
