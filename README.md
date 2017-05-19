@@ -59,6 +59,7 @@ In the C# sourcecode you will find some code regarding simple HTTP requests to o
 ```C#
 var webClient = new System.Net.WebClient();
 string url = "http://me2stats.eu:5020/join?version=" + version_string + "&key=" + auth_key;
+webClient.DownloadStringAsync(new Uri(url));
 ```
 
 It gives us an approximated number of players online, as well as record game crashes (so that we can act fast if something breaks). The probability that you might need this code is very low, so just get rid off it. If you are really interested in the webAPI code, just drop me a private message.
