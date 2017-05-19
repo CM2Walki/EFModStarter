@@ -5,6 +5,7 @@
 3. [Lua-io library](https://www.lua.org/manual/5.3/manual.html#6.8)
 4. [Lua JSON library](http://lua-users.org/wiki/JsonModules)
 5. The latest steam_api.dll
+
 (You can find a copy of those in the EF_Bin folder)
 
 This project was created to implement and use the Steamworks API in a Company of Heroes (**1**) Steam mod. It functions as a communications tool between the game's scripting language SCAR (~Lua) and the actual achievements API. Furthermore, it uses a workaround to display the mod rather than the default Company of Heroes game as currently being played on Steamfriends. It also implements a link to a basic diagnotics DB, that allows us to derive the total amount of crashes per version and the amount of players currently online. 
