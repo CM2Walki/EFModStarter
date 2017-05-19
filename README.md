@@ -12,7 +12,7 @@ This project was created to implement and use the Steamworks API in a Company of
 
 To fully grasp the structure of the program, we first have to look at the way Steam used to display the currently played game:
 
-d**Old** System (FCFS, the first game to launch is displayed as being played):
+**Old** System (FCFS, the first game to launch is displayed as being played):
 1. Start mod _.bat/.exe_ via Steam
 2. Steam recognises _.bat/.exe_ as parent process
 3. Steamfriends displays the mod
@@ -22,7 +22,7 @@ d**Old** System (FCFS, the first game to launch is displayed as being played):
 2. Company of Heroes (New Steam Version), a Steam game, gets launched
 3. Steamfriends displays Company of Heroes (New Steam Version)
 
-e# The Workaround
+# The Workaround
 To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts the _CoHEF.exe_ after a fixed delay, for it then to reclaim it's spot as the last game launched. In the end we end up with a structure like this:
 
 1. Start _CoHEF.exe_
