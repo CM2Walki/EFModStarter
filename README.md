@@ -31,9 +31,9 @@ To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts t
 6. Steamfriends will now display Company of Heroes: Eastern Front
 
 # The Achievements
-The launcher uses the [Steamworks.NET API library](https://steamworks.github.io/). This will obviously only work if your .exe is launched via Steam. The _CoHEF.exe_ itself is only responsible for writting changes to Steam that were read from the _pipeline.dat_. It does **not** read directly from the game! The _pipeline.dat_ is written to by SCAR, to make this work you will need both a pure Lua JSON library and the lua-io library.
+The launcher uses the [Steamworks.NET API library](https://steamworks.github.io/). This will obviously only work if your .exe is launched via Steam. The _CoHEF.exe_ itself is only responsible for writting changes to Steam that were read from the _pipeline.dat_. It does **not** read directly from the game! The _pipeline.dat_ is written to by SCAR, to make this work you will need both a pure Lua JSON library and the lua-io library (you can find those in the EF_Bin folder).
 
-To activate achievements in a game, simply load the _achievements.scar_ in a gamemode's .scar file and then call _achievements_init()_. This comes in handy if you want to disallow achievements in certain scenarios.
+To activate achievements in a game, simply load the _achievements.scar_ in a gamemode's .scar file and then call _achievements_init()_. This comes in handy if you want to disallow achievements in certain scenarios:
 
 ```lua
 import("achievements.scar")
@@ -44,7 +44,7 @@ function _initdata()
 end
 ```
 
-As stated above the .exe parses the JSON from the _pipeline.dat_ and then proceeds to iterate the table to find the status of each achievement. 
+As stated earlier the .exe parses the JSON from the _pipeline.dat_ and then proceeds to iterate the table to find the status of each achievement. It only checks the file if is has been edited.
 
 Note that you need to place the steam_api.dll in a seperate folder (EF uses EF_Bin). Do **NOT** replace the steam_api.dll from the original installation folder as it will break vCoH!
 
