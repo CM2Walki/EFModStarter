@@ -1,0 +1,728 @@
+local json = assert(loadfile("EF_Bin\\json.scar"))();
+assert(loadfile("lua-io.dll", "luaopen_io"))();
+
+local player = 0
+local raceid = 0
+local wolverine_counter = 0
+local sniper_damage = {}
+local soviet_industry_lock = false
+local soviet_industry_requirement = false
+local hitlers_cats_lock = false
+local hitlers_cats_requirement = false
+local human_wave_lock = false
+local bigcats = false
+local rbtn_lock = false
+local heroes_lock = false
+local vet4_lock = false
+local pershing2_lock = false
+local volkssturm_lock = false
+local landlease_lock = false
+local danko_lock = false
+
+g_achievements_active = true --used by wcutil.scar
+
+-- Used to determine whenever we need to write the file
+local changes = true
+
+achievements_tbl = {
+		feld_steiner = { "landser_elite", "0" }, --Implemented
+		hitler_cats = { "fuhrer_katzen", "0" }, --Implemented
+		red_army = { "red_wave", "0" }, --Implemented
+		woroshilov = { "woroshilov_kv2", "0" }, --Implemented
+		saizew = { "saizew_sniper", "0" }, --Implemented
+		danko = { "danko_callin", "0" }, --Implemented
+		isu = { "isu_jager", "0" }, --Implemented
+		grup_steiner = { "angriff_steiner", "0" }, --Implemented
+		wittmann = { "wittmann_tiger", "0" }, --Implemented
+		soviet_prod = { "soviet_industry", "0" }, --Implemented
+		kv1 = { "kolobanov", "0" }, --Implemented
+		oneman = { "onemanarmy", "0" }, --Implemented
+		jeep = { "jeepconstruction", "0" }, --Implemented
+		bigcats = { "bigcats", "0" }, --Implemented
+		furysherman = { "bradpittfury", "0" }, --Implemented
+		furytiger = { "bradpitttiger", "0" }, --Implemented
+		rushberlin = { "rushberlin", "0" }, --Implemented
+		mohairborne = { "medalofhonorairborne", "0" }, --Implemented
+		mg42 = { "mg42", "0" }, --Implemented
+		collateral = { "collateral", "0" }, --Implemented
+		stransky = { "stransky", "0" }, --Implemented
+		is2construction = { "is2construction", "0" }, --Implemented
+		jungleking = { "jungleking", "0" }, --Implemented
+		stormtiger = { "stormtiger", "0" }, --Implemented
+		pershing = { "pershing", "0" }, --Implemented
+		hummel = { "hummel", "0" }, --Implemented
+		lendlease = { "lendlease", "0" }, --Implemented
+		volkssturm = { "volkssturm", "0" }, --Implemented
+		compstomp = { "compstomp", "0" }, --Implemented
+		pershing2 = { "pershing2", "0" }, --Implemented
+		churchill = { "churchill", "0" }, --Implemented
+		wolverine = { "wolverine", "0" }, --Implemented
+		crazywilly = { "crazywilly", "0" }, --Implemented
+		bergetiger = { "bergetiger", "0" }, --Implemented
+		kettenkrad = { "kettenkrad", "0" }, --Implemented
+		beutepanzer = { "beutepanzer", "0" }, --Implemented
+		bledforthis = { "bledforthis", "0" }, --Implemented
+		downfall = { "downfall", "0" }, --Implemented
+		r_btn = { "no_reinforce", "0" }, --Implemented
+		heroes = { "su_heroes", "0" }, --Implemented
+		vet4 = { "oh_heroes", "0" } --Implemented
+	}
+
+function achievements_init()
+	reset()
+	Push()
+	player = Game_GetLocalPlayer()
+	T3476 = BP_GetSquadBlueprint("sbps/races/axis_ostheer/vehicles/T34_76_squad.lua")
+	T3485 = BP_GetSquadBlueprint("sbps/races/axis_ostheer/vehicles/T34_85_squad.lua")
+	if ((player ~= 0) and (Player_IsHuman(player) == true)) then
+		raceid = Player_GetRace(player)
+		sg_achivsquads = SGroup_CreateIfNotFound("sg_achivsquads")
+		sg_ignoresquads = SGroup_CreateIfNotFound("sg_ignoresquads")
+		sg_hummelgroup = SGroup_CreateIfNotFound("sg_hummelgroup")
+		sg_flakgroup = SGroup_CreateIfNotFound("sg_flakgroup")
+		Rule_AddInterval(achievements_rule, 2)
+	end
+end
+
+function achievements_rule()
+	--[1] = Americans, [0] = British, [2] = Soviet, [3] = Wehr, [4] & [5] should both be PE (PE is currently 4, but when ostheer is released, PE will be 5 instead).
+	sg_achivsquads = Player_GetSquads(player)
+	if (raceid == 4) then
+		Check_OstheerAchievements()
+	elseif (raceid == 2) then
+		Check_SovietAchievements()
+	elseif (raceid == 3) then
+		Check_WehrmachtAchievements()
+	elseif (raceid == 1) then
+		Check_USAAchievements()
+	elseif (raceid == 5) then
+		Check_PanzerEliteAchievements()
+	elseif (raceid == 0) then
+		Check_CommonwealthAchievements()
+	end
+	
+	--local gamestate = World_IsGameOver()
+	--local playerstate = Player_IsAlive(player) Got replaced by a global variable set by wcutil.scar
+	--if ((gamestate == true) and (player_win_state == true)) then
+	--	Game_Victory()
+	--elseif ((gamestate == true) and (player_win_state == false)) then
+	--	Game_Lost()
+	--end
+	
+	if ((EGroup_Count(eg_allambientbuildings) < 1) and achievements_tbl.collateral[2] == "0") then
+		achievements_tbl.collateral = { "collateral", "1" }
+		changes = true
+	end
+	
+	Push()
+end
+
+function Check_SovietAchievements()
+	local SquadFinder = function(sgroupid, itemindex, SquadID)
+		local totalkills = 0;
+		local blueprint = Squad_GetBlueprint(SquadID)
+		if (SGroup_ContainsSquad(sg_ignoresquads, Squad_GetGameID(SquadID)) == false) then
+			isVehicle = Squad_IsVehicle(SquadID)
+			if ((soviet_industry_lock == false) and (isVehicle == true)) then
+				if (((blueprint == SBP.SOVIET.T34) == false) or (blueprint == SBP.SOVIET.SU76) == false) then
+					soviet_industry_lock = true
+				else
+					soviet_industry_requirement = true
+				end
+			end
+			if ((blueprint ~= SBP.SOVIET.CONSCRIPT) or (blueprint ~= SBP.SOVIET.COMMAND) or (blueprint ~= SBP.SOVIET.GUARDS) or (blueprint ~= SBP.SOVIET.SAPPER_ST)) then
+				danko_lock = true
+			end
+			if ((blueprint == SBP.SOVIET.MG_SQUAD) or (blueprint == SBP.SOVIET.ZIS2) or (blueprint == SBP.SOVIET.MORTAR) or (blueprint == SBP.SOVIET.M1927_76MM)) then
+				landlease_lock = true
+			end
+			if (Squad_IsReinforcing(SquadID)) then
+				rbtn_lock = true
+			end
+			if (isVehicle == true) then
+				human_wave_lock = true
+			end
+			if (blueprint == SBP.SOVIET.KV2) then
+				totalkills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				totalkills = totalkills + Squad_GetKillCount(SquadID, VS_LightArmor)
+				if (totalkills >= 25) then
+					achievements_tbl.woroshilov = { "woroshilov_kv2", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.SOVIET.ISU152) then
+				totalkills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (totalkills >= 5) then
+					achievements_tbl.isu = { "isu_jager", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.SOVIET.KV1) then
+				totalkills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (totalkills >= 6) then
+					achievements_tbl.kv1 = { "kolobanov", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.SOVIET.SNIPER) then
+				totalkills = Squad_GetKillCount(SquadID, VS_Infantry)
+				if (totalkills >= 100 and achievements_tbl.oneman[2] == "0") then
+					achievements_tbl.oneman = { "onemanarmy", "1" }
+					changes = true
+				end
+				
+				if (Squad_GetHealthPercentage(SquadID) ~= 100) then
+					sniper_damage[SquadID] = 1
+				else
+					local rank = Squad_GetVeterancyRank(SquadID)
+					if (rank == 3 and sniper_damage[SquadID] == nil and achievements_tbl.saizew[2] == "0") then
+						achievements_tbl.saizew = { "saizew_sniper", "1" }
+						changes = true
+					end
+				end
+			elseif (blueprint == SBP.SOVIET.IS2) then
+				achievements_tbl.is2construction = { "is2construction", "1" }
+				SGroup_Add(sg_ignoresquads, SquadID)
+			end
+		end
+	end
+	SGroup_ForEach(sg_achivsquads, SquadFinder)
+end
+
+function Check_WehrmachtAchievements()
+	local SquadFinder = function(sgroupid, itemindex, SquadID)
+		local totalkills = 0;
+		local blueprint = Squad_GetBlueprint(SquadID)
+		if (SGroup_ContainsSquad(sg_ignoresquads, Squad_GetGameID(SquadID)) == false) then
+			if (hitlers_cats_lock == false and (Squad_IsVehicle(SquadID) == true)) then
+				if (((blueprint == SBP.AXIS.TIGER) == false) or (blueprint == SBP.AXIS.PANTHER) == false) then
+					hitlers_cats_lock = true
+				else
+					hitlers_cats_requirement = true
+				end
+			end
+			if (blueprint ~= SBP.AXIS.VOLKSGRENADIER or blueprint ~= SBP.AXIS.PIONEER) then
+				volkssturm_lock = true
+			end
+			if (Squad_IsReinforcing(SquadID)) then
+				rbtn_lock = true
+			end
+			if (blueprint == SBP.AXIS.KING_TIGER) then
+				bigcats = true
+			end
+			if ((blueprint == SBP.AXIS.FLAK_88) or (blueprint == SBP.AXIS.CAPTURE_88_AXIS)) then
+				SGroup_Add(sg_flakgroup, SquadID)
+			end
+			if (blueprint == SBP.AXIS.TIGER) then
+				lv_kills = Squad_GetKillCount(SquadID, VS_LightArmor)
+				hv_kills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (hv_kills >= 10 and lv_kills >= 2 and achievements_tbl.wittmann[2] == "0") then
+					achievements_tbl.wittmann = { "wittmann_tiger", "1" }
+					changes = true
+				end
+				if (hv_kills >= 25 and achievements_tbl.furytiger[2] == "0") then
+					achievements_tbl.furytiger = { "bradpitttiger", "1" }
+					changes = true
+				end
+			elseif (blueprint == SBP.AXIS.SNIPER) then
+				totalkills = Squad_GetKillCount(SquadID, VS_Infantry)
+				if (totalkills >= 100) then
+					achievements_tbl.oneman = { "onemanarmy", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.AXIS.HEAVYMG) then
+				totalkills = Squad_GetKillCount(SquadID, VS_Infantry)
+				if (totalkills >= 50) then
+					achievements_tbl.mg42 = { "mg42", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif ((blueprint == SBP.AXIS.OFFICER) or (blueprint == SBP.AXIS.LUFTWAFFE_OFFICER)) then
+				if (Squad_GetVeterancyRank(SquadID) == 3) then
+					achievements_tbl.stransky = { "stransky", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.OSTHEER.STURMTIGER) then
+				inf_kills = Squad_GetKillCount(SquadID, VS_Infantry)
+				lv_kills = Squad_GetKillCount(SquadID, VS_LightArmor)
+				hv_kills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (inf_kills >= 10 and hv_kills >= 1 and lv_kills >= 1) then
+					achievements_tbl.stormtiger = { "stormtiger", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			end
+		end
+	end
+	SGroup_ForEach(sg_achivsquads, SquadFinder)
+end
+
+function Check_PanzerEliteAchievements()
+	local SquadFinder = function(sgroupid, itemindex, SquadID)
+		local totalkills = 0;
+		local blueprint = Squad_GetBlueprint(SquadID)
+		if (SGroup_ContainsSquad(sg_ignoresquads, Squad_GetGameID(SquadID)) == false) then
+			if (Squad_IsReinforcing(SquadID)) then
+				rbtn_lock = true
+			end
+			if (blueprint == SBP.ELITE.CAPTURE_88_ELITE) then
+				SGroup_Add(sg_flakgroup, SquadID)
+			end
+			if (blueprint == SBP.ELITE.KETTENRAD) then
+				if (Squad_GetVeterancyRank(SquadID) == 3) then
+					achievements_tbl.kettenkrad = { "kettenkrad", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.ELITE.BERGETIGER) then
+				if (Squad_GetVeterancyRank(SquadID) == 3) then
+					achievements_tbl.bergetiger = { "bergetiger", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.ELITE.HUMMEL) then
+				SGroup_Add(sg_hummelgroup, SquadID)
+			end
+		end
+	end
+	SGroup_ForEach(sg_achivsquads, SquadFinder)
+end
+
+function Check_USAAchievements()
+	local SquadFinder = function(sgroupid, itemindex, SquadID)
+		local totalkills = 0;
+		local blueprint = Squad_GetBlueprint(SquadID)
+		if (SGroup_ContainsSquad(sg_ignoresquads, Squad_GetGameID(SquadID)) == false) then
+			if (Squad_IsReinforcing(SquadID)) then
+				rbtn_lock = true
+			end
+			if (Squad_IsVehicle(SquadID) == true) then
+				if ((blueprint == SBP.ALLIES.PERSHING) == false) then
+					pershing2_lock = true
+				end
+				
+				if (pershing2_lock == false) then
+					if (Squad_GetVeterancyRank(SquadID) == 3) then
+						achievements_tbl.pershing2 = { "pershing2", "1" }
+						SGroup_Add(sg_ignoresquads, SquadID)
+						changes = true
+					end
+				end
+			end
+			if (blueprint == SBP.ALLIES.SNIPER) then
+				totalkills = Squad_GetKillCount(SquadID, VS_Infantry)
+				if (totalkills >= 100) then
+					achievements_tbl.oneman = { "onemanarmy", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end		
+			elseif (blueprint == SBP.ALLIES.JEEP) then
+				if (achievements_tbl.jeep[2] == "0") then --This makes sure we don't call the writing thread every 2 seconds, this only affects squads with multiple achievements
+					achievements_tbl.jeep = { "jeepconstruction", "1" }		
+					changes = true				
+				end
+				if (Squad_GetVeterancyRank(SquadID) == 3) then
+					achievements_tbl.crazywilly = { "crazywilly", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.ALLIES.SHERMAN and Player_HasUpgrade(player, UPG.ALLIES.GUN_76MM)) then
+				totalkills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (totalkills >= 25) then
+					achievements_tbl.furysherman = { "bradpittfury", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.ALLIES.M10) then	
+				wolverine_counter = wolverine_counter + 1
+				if (wolverine_counter >= 10) then
+					achievements_tbl.wolverine = { "wolverine", "1" }
+					changes = true
+				end
+				SGroup_Add(sg_ignoresquads, SquadID)
+			elseif (blueprint == SBP.ALLIES.PERSHING) then
+				if (Squad_GetVeterancyRank(SquadID) == 3) then
+					achievements_tbl.pershing = { "pershing", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			end
+		end
+	end
+	SGroup_ForEach(sg_achivsquads, SquadFinder)
+end
+
+function Check_CommonwealthAchievements()
+	local SquadFinder = function(sgroupid, itemindex, SquadID)
+		local totalkills = 0;
+		local blueprint = Squad_GetBlueprint(SquadID)
+		if (SGroup_ContainsSquad(sg_ignoresquads, Squad_GetGameID(SquadID)) == false) then
+			if ((blueprint == SBP.CW.COMMANDOS_MG) or (blueprint == SBP.CW.COMMANDOS_MORTAR) or (blueprint == SBP.CW.MORTAR)) then
+				landlease_lock = true
+			end
+			if (Squad_IsReinforcing(SquadID)) then
+				rbtn_lock = true
+			end
+			if (blueprint == SBP.CW.CHURCHILL_AVRE or blueprint == SBP.CW.CHURCHILL_CROC or blueprint == SBP.CW.CHURCHILL) then
+				achievements_tbl.churchill = { "churchill", "1" }
+				SGroup_Add(sg_ignoresquads, SquadID)
+				changes = true
+			end
+		end
+	end
+	SGroup_ForEach(sg_achivsquads, SquadFinder)
+end
+
+function Check_OstheerAchievements()
+	local SquadFinder = function(sgroupid, itemindex, SquadID)
+		local totalkills = 0;
+		local blueprint = Squad_GetBlueprint(SquadID)
+		if (SGroup_ContainsSquad(sg_ignoresquads, Squad_GetGameID(SquadID)) == false) then
+			if (Squad_IsReinforcing(SquadID)) then
+				rbtn_lock = true
+			end
+			if (hitlers_cats_lock == false and (Squad_IsVehicle(SquadID) == true)) then
+				if (((blueprint == SBP.OSTHEER.TIGER_LATE) == false) or ((blueprint == SBP.OSTHEER.PANTHER) == false)) then
+					hitlers_cats_lock = true -- Impossible to get hitlers_cats this game
+				else
+					hitlers_cats_requirement = true
+				end
+			end
+			if (blueprint == SBP.OSTHEER.LANDSER) then
+				totalkills = Squad_GetKillCount(SquadID, VS_Infantry)
+				if (totalkills >= 50) then
+					achievements_tbl.feld_steiner = { "landser_elite", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.OSTHEER.TIGER_LATE) then
+				lv_kills = Squad_GetKillCount(SquadID, VS_LightArmor)
+				hv_kills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (hv_kills >= 10 and lv_kills >= 2 and achievements_tbl.wittmann[2] == "0") then
+					achievements_tbl.wittmann = { "wittmann_tiger", "1" }
+					changes = true
+				end
+				if (hv_kills >= 25 and achievements_tbl.furytiger[2] == "0") then
+					achievements_tbl.furytiger = { "bradpitttiger", "1" }
+					changes = true
+				end
+			elseif (blueprint == SBP.OSTHEER.MARKSMAN) then
+				totalkills = Squad_GetKillCount(SquadID, VS_Infantry)
+				if (totalkills >= 100) then
+					achievements_tbl.oneman = { "onemanarmy", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.OSTHEER.ELEFANT) then
+				totalkills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (totalkills >= 10) then
+					achievements_tbl.jungleking = { "jungleking", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == SBP.OSTHEER.COMMANDER) then
+				if (Squad_GetVeterancyRank(SquadID) == 5) then
+					achievements_tbl.stransky = { "stransky", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			elseif (blueprint == T3476 or blueprint == T3485) then
+				totalkills = Squad_GetKillCount(SquadID, VS_HeavyArmor)
+				if (totalkills >= 5) then
+					achievements_tbl.beutepanzer = { "beutepanzer", "1" }
+					SGroup_Add(sg_ignoresquads, SquadID)
+					changes = true
+				end
+			end
+		end
+	end
+	SGroup_ForEach(sg_achivsquads, SquadFinder)
+end
+
+function Push()
+	if (changes == true) then
+		local str = json.encode(achievements_tbl)
+		local file = assert(io.open("pipeline.dat", "w+"));
+		file:write(str)
+		file:close()
+		changes = false
+	end
+end
+
+function reset()
+	achievements_tbl = {
+		feld_steiner = { "landser_elite", "0" }, --Implemented
+		hitler_cats = { "fuhrer_katzen", "0" }, --Implemented
+		red_army = { "red_wave", "0" }, --Implemented
+		woroshilov = { "woroshilov_kv2", "0" }, --Implemented
+		saizew = { "saizew_sniper", "0" }, --Implemented
+		danko = { "danko_callin", "0" }, --Implemented
+		isu = { "isu_jager", "0" }, --Implemented
+		grup_steiner = { "angriff_steiner", "0" }, --Implemented
+		wittmann = { "wittmann_tiger", "0" }, --Implemented
+		soviet_prod = { "soviet_industry", "0" }, --Implemented
+		kv1 = { "kolobanov", "0" }, --Implemented
+		oneman = { "onemanarmy", "0" }, --Implemented
+		jeep = { "jeepconstruction", "0" }, --Implemented
+		bigcats = { "bigcats", "0" }, --Implemented
+		furysherman = { "bradpittfury", "0" }, --Implemented
+		furytiger = { "bradpitttiger", "0" }, --Implemented
+		rushberlin = { "rushberlin", "0" }, --Implemented
+		mohairborne = { "medalofhonorairborne", "0" }, --Implemented
+		mg42 = { "mg42", "0" }, --Implemented
+		collateral = { "collateral", "0" }, --Implemented
+		stransky = { "stransky", "0" }, --Implemented
+		is2construction = { "is2construction", "0" }, --Implemented
+		jungleking = { "jungleking", "0" }, --Implemented
+		stormtiger = { "stormtiger", "0" }, --Implemented
+		pershing = { "pershing", "0" }, --Implemented
+		hummel = { "hummel", "0" }, --Implemented
+		lendlease = { "lendlease", "0" }, --Implemented
+		volkssturm = { "volkssturm", "0" }, --Implemented
+		compstomp = { "compstomp", "0" }, --Implemented
+		pershing2 = { "pershing2", "0" }, --Implemented
+		churchill = { "churchill", "0" }, --Implemented
+		wolverine = { "wolverine", "0" }, --Implemented
+		crazywilly = { "crazywilly", "0" }, --Implemented
+		bergetiger = { "bergetiger", "0" }, --Implemented
+		kettenkrad = { "kettenkrad", "0" }, --Implemented
+		beutepanzer = { "beutepanzer", "0" }, --Implemented
+		bledforthis = { "bledforthis", "0" }, --Implemented
+		downfall = { "downfall", "0" }, --Implemented
+		r_btn = { "no_reinforce", "0" }, --Implemented
+		heroes = { "su_heroes", "0" }, --Implemented
+		vet4 = { "oh_heroes", "0" } --Implemented
+	}
+end
+
+function Game_Victory()
+	--[1] = Americans, [0] = British, [2] = Soviet, [3] = Wehr, [4] & [5] should both be PE (PE is currently 4, but when ostheer is released, PE will be 5 instead).
+	local gametime = World_GetGameTime()
+	local loosestotal = Stats_InfantryLost(player) + Stats_VehiclesLost(player)
+	local killstotal = Stats_SoldiersKilled(player) + Stats_VehiclesKilled(player)
+	if (rbtn_lock == false) then
+		achievements_tbl.r_btn = { "no_reinforce", "1" }
+	end
+	if (raceid == 4) then --Ostheer
+		if ((hitlers_cats_lock == false) and (hitlers_cats_requirement == true)) then
+			achievements_tbl.hitler_cats = { "fuhrer_katzen", "1" }
+			changes = true
+		end
+		if (Player_GetNumStrategicPoints(player) == 0) then
+			achievements_tbl.grup_steiner = { "angriff_steiner", "1" }
+			changes = true
+		end
+		if (loosestotal > 200) then
+			achievements_tbl.bledforthis = { "bledforthis", "1" }
+			changes = true
+		end
+		if (SGroup_CheckVeterancyRank(Player_GetSquads(player), 5) == true) then
+			achievements_tbl.vet4 = { "oh_heroes", "1" }
+			changes = true
+		end
+	elseif (raceid == 2) then --Soviets
+		if (gametime < 900) then
+			achievements_tbl.rushberlin = { "rushberlin", "1" }
+			changes = true
+		end
+		if (human_wave_lock == false) then
+			achievements_tbl.red_army = { "red_wave", "1" }
+			changes = true
+		end
+		if (loosestotal > 200) then
+			achievements_tbl.bledforthis = { "bledforthis", "1" }
+			changes = true
+		end
+		if (SGroup_CheckVeterancyRank(Player_GetSquads(player), 3) == true) then
+			achievements_tbl.heroes = { "su_heroes", "1" }
+			changes = true
+		end
+		if (danko_lock == false) then
+			achievements_tbl.danko = { "danko_callin", "1" }
+			changes = true
+		end
+		if (landlease_lock == false) then
+			achievements_tbl.lendlease = { "lendlease", "1" }
+			changes = true
+		end
+	elseif (raceid == 3) then --Wehr
+		if ((hitlers_cats_lock == false) and (hitlers_cats_requirement == true)) then
+			achievements_tbl.hitler_cats = { "fuhrer_katzen", "1" }
+			changes = true
+		end
+		if (loosestotal > 200) then
+			achievements_tbl.bledforthis = { "bledforthis", "1" }
+			changes = true
+		end
+		if (volkssturm_lock == false) then
+			achievements_tbl.volkssturm = { "volkssturm", "1" }
+			changes = true
+		end
+		local aliveflakcount = 0
+		local SquadScan = function(sgroupid, itemindex, SquadID)
+			if (Squad_GetHealth(squadID) > 0 ) then
+				aliveflakcount = aliveflakcount + 1
+			end
+		end
+		SGroup_ForEach(sg_flakgroup, SquadScan)
+		if ((aliveflakcount >= 3) and (killstotal > 100)) then
+			achievements_tbl.compstomp = { "compstomp", "1" }
+			changes = true
+		end
+	elseif (raceid == 0) then --British
+		if (gametime < 900) then
+			achievements_tbl.rushberlin = { "rushberlin", "1" }
+			changes = true
+		end
+		if (loosestotal > 200) then
+			achievements_tbl.bledforthis = { "bledforthis", "1" }
+			changes = true
+		end
+		if (landlease_lock == false) then
+			achievements_tbl.lendlease = { "lendlease", "1" }
+			changes = true
+		end
+	elseif (raceid == 1) then --Americans
+		if (gametime < 900) then
+			achievements_tbl.rushberlin = { "rushberlin", "1" }
+			changes = true
+		end
+		if (loosestotal > 200) then
+			achievements_tbl.bledforthis = { "bledforthis", "1" }
+			changes = true
+		end
+		local airborne = SGroup_CheckVeterancyRankAirborne(Player_GetSquads(player), 3)
+		if (airborne >= 3) then
+			achievements_tbl.mohairborne = { "medalofhonorairborne", "1" }
+			changes = true
+		end
+	elseif (raceid == 5) then --Panzerelite
+		if (loosestotal > 200) then
+			achievements_tbl.bledforthis = { "bledforthis", "1" }
+			changes = true
+		end
+		local SquadScan = function(sgroupid, itemindex, SquadID)
+			if (Squad_GetHealth(squadID) > 0) then
+				achievements_tbl.hummel = { "hummel", "1" }
+				changes = true
+			end
+		end
+		SGroup_ForEach(sg_hummelgroup, SquadScan)
+		local aliveflakcount = 0
+		local SquadScan = function(sgroupid, itemindex, SquadID)
+			if (Squad_GetHealth(squadID) > 0 ) then
+				aliveflakcount = aliveflakcount + 1
+			end
+		end
+		SGroup_ForEach(sg_flakgroup, SquadScan)
+		if ((aliveflakcount >= 3) and (killstotal > 100)) then
+			achievements_tbl.compstomp = { "compstomp", "1" }
+			changes = true
+		end
+	end
+	changes = true
+	Push()
+end
+
+function Game_Lost()
+	local gametime = World_GetGameTime()
+	if (raceid == 4) then --Ostheer
+		if (gametime >= 5400) then
+			achievements_tbl.downfall = { "downfall", "1" }
+			changes = true
+		end
+		if (SGroup_CheckVeterancyRank(Player_GetSquads(player), 5) == true) then
+			achievements_tbl.vet4 = { "oh_heroes", "1" }
+			changes = true
+		end
+	elseif (raceid == 5) then --PanzerElite
+		if (gametime >= 5400) then
+			achievements_tbl.downfall = { "downfall", "1" }
+			changes = true
+		end
+		local SquadScan = function(sgroupid, itemindex, SquadID)
+			if (Squad_GetHealth(squadID) > 0) then
+				achievements_tbl.hummel = { "hummel", "1" }
+				changes = true
+			end
+		end
+		SGroup_ForEach(sg_hummelgroup, SquadScan)
+		local aliveflakcount = 0
+		local SquadScan = function(sgroupid, itemindex, SquadID)
+			if (Squad_GetHealth(squadID) > 0 ) then
+				aliveflakcount = aliveflakcount + 1
+			end
+		end
+		SGroup_ForEach(sg_flakgroup, SquadScan)
+		if ((aliveflakcount >= 3) and (killstotal > 100)) then
+			achievements_tbl.compstomp = { "compstomp", "1" }
+			changes = true
+		end	
+	elseif (raceid == 2) then --Soviets
+		if (SGroup_CheckVeterancyRank(Player_GetSquads(player), 3) == true) then
+			achievements_tbl.heroes = { "su_heroes", "1" }
+			changes = true
+		end	
+	elseif (raceid == 3) then --Wehr
+		if (bigcats == true) then
+			achievements_tbl.bigcats = { "bigcats", "1" }
+			changes = true
+		end
+		if (gametime >= 5400) then
+			achievements_tbl.downfall = { "downfall", "1" }
+			changes = true
+		end
+		local aliveflakcount = 0
+		local SquadScan = function(sgroupid, itemindex, SquadID)
+			if (Squad_GetHealth(squadID) > 0 ) then
+				aliveflakcount = aliveflakcount + 1
+			end
+		end
+		SGroup_ForEach(sg_flakgroup, SquadScan)
+		if ((aliveflakcount >= 3) and (killstotal > 100)) then
+			achievements_tbl.compstomp = { "compstomp", "1" }
+			changes = true
+		end
+	end
+	changes = true
+	Push()
+end
+
+function SGroup_CheckVeterancyRank(sgroup, vetlevel)
+	local test = true
+	local squadfunction = function(sgroupid, itemindex, SquadID)
+		if (Squad_GetVeterancyRank(SquadID) ~= vetlevel) then
+			test = false
+		end
+	end
+	SGroup_ForEach(sgroup, squadfunction)
+	if (test == false) then
+		return false
+	else
+		return true	
+	end
+end
+
+function SGroup_CheckVeterancyRankAirborne(sgroup, vetlevel)
+	local airborne_counter = 0
+	local squadfunction = function(sgroupid, itemindex, SquadID)
+		if (Squad_GetVeterancyRank(SquadID) == vetlevel) then
+			airborne_counter = airborne_counter + 1
+		end
+	end
+	SGroup_ForEach(sgroup, squadfunction)
+	return airborne_counter
+end
+
+function Squad_IsVehicle(SquadID)
+	local n = Squad_Count(SquadID)
+	local i
+	for i = 1, n do
+		if(Entity_IsVehicle(Squad_EntityAt(SquadID, n-1)) == false) then
+			return false
+		end
+	end
+	return true
+end
