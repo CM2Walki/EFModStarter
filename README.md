@@ -39,12 +39,13 @@ function _initdata()
     [...]
     achievements_init()
     [...]
+end
 ```
 
 # Security
 This approach is really unsafe, as the player can simply edit the associated .scar files or even the _pipeline.dat_ to quickly unlock all files. If one feels fancy, he might want to implement some encryption.
 
-# Donate
-I did this in my spare time in the interest of all CoH1 mods. If one thinks I deserve a reward for this then go ahead and follow this button:
+### Donate
+I did this in my spare time in the interest of all CoH1 mods. If one thinks I deserve a reward for this, then go ahead and follow this button:
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MQGHXU85FDUPW)
