@@ -35,6 +35,12 @@ To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts t
 # The Achievements
 The launcher uses the [Steamworks.NET API library](https://steamworks.github.io/). This will obviously only work if your .exe is launched via Steam. The _CoHEF.exe_ itself is only responsible for writting changes to Steam that were read from the _pipeline.dat_. It does **not** read directly from the game! The _pipeline.dat_ is written to by SCAR, to make this work you will need both a pure Lua JSON library and the lua-io library (you can find those in the EF_Bin folder).
 
+You will need to adapt the lua table in the _achievements.scar_ to correctly represent the achievement of your mod:
+
+"lua_name" = { "steamachievement_name", "achievement_status" }
+Example: feld_steiner = { "landser_elite", "0" }
+
+Then obviously you will be required to add or modify the triggers to fit your preferences. Any function from the SCAR doc is fair game.
 To activate achievements in a game, simply load the _achievements.scar_ in a gamemode's .scar file and then call _achievements_init()_. This comes in handy if you want to disallow achievements in certain scenarios:
 
 ```lua
