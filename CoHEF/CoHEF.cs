@@ -6,7 +6,6 @@ using System.Management;
 using System.IO;
 using Steamworks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
 /*-----------------------------------------------------------------------
@@ -38,6 +37,7 @@ namespace CoHEF
         private static string cohfilename2 = "RelicCoH.exe";
         private static string bugsplat_report = "BsSndRpt";
         private static string ef_version_locale_key = "18030216";
+        // private static string auth_key = "wd3DEcjqgeYqFWTUWsS6r37ja62F2EzZBGZnar9hSfNULp3hXXvUJdxY9qKrG7a9eEqAvmr6ucPRAaU5LD99ep6huyUysV7YuYBpmwWASVajk3g9JUqdtRhQbN8kCgueZnNWxQ8LhbSAF4JeUSSAvU4P4PmgGkkpzXUtnYwqt55FbJ9LyNJvc9WWNnbWz3WVpvpHvaufdrKAkUtgvvuAjpvPu3qAtRxjCGVkVeGpXJmenzcCRKCfmcZuYBBVZxJ32Xa87m45mwEjCQvaKmGf5qtkZcgvCpSdNqKWtsFCgcJSFZg6mgWfuVUFfZ3VP6D47NQAwVrdL9AYLHtSwQvv2VSQTzjEfz6J9TssE4gw2bvmugEkWGKGBDX6m6cPGv4v2AhGR4xjwkky25HYz7D7j4y2AYwqZQ8uYa2pnLj2qT3Wwx9zrk8F4czSBzpDhz6kfqZJvnXRXBCWSZsaKsuykSSs2BjAKvfnfTwVwYYz3pBCwBdWeVrrSmX34Xv26ZQT";
         private static string auth_key = ""; // Removed for GitHub release
 
         // NOTE: -unqiuetoken is only a "marker" to find the right process in case of more than one RelicCoH Process
@@ -59,7 +59,7 @@ namespace CoHEF
 
             foreach (string arg in args)
             {
-                if (arg.Equals("-cheat"))
+                if (arg == "-cheat")
                 {
                     bool steamapi_state = SteamAPI.Init();
                     bool achievements_state = SteamUserStats.RequestCurrentStats();
@@ -70,7 +70,7 @@ namespace CoHEF
                     }
                     SteamAPI.Shutdown();
                 }
-                else if (arg.Equals("-daemonmode"))
+                else if (arg == "-daemonmode")
                 {
                     bool steamapi_state = SteamAPI.Init();
                     bool achievements_state = SteamUserStats.RequestCurrentStats();
@@ -169,7 +169,7 @@ namespace CoHEF
                                         // Iterate the boolean achievements
                                         foreach (List<string> list in achievements_bool)
                                         {
-                                            if (list[1].Equals("1")) // Did he/she get the achievement? index 1 is always the achievement status
+                                            if (list[1] == "1") // Did he/she get the achievement? index 1 is always the achievement status
                                             {
                                                 string api_name = list[0]; // index 0 is always the achievement api_name
                                                 if (SteamUserStats.SetAchievement(api_name))
@@ -263,7 +263,8 @@ namespace CoHEF
             { 
                 webClient.DownloadStringAsync(new Uri(url));
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 // Suppress weberrors, could be no internet etc.
             }
 

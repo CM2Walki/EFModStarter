@@ -17,7 +17,7 @@ namespace EFDaemon
 
             foreach (string arg in args)
             {
-                if (arg.Equals("-daemonmode"))
+                if (arg == "-daemonmode")
                 {
                     // Did the other exe start us?
                     // This delay might seem weird, 
