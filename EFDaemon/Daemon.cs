@@ -1,14 +1,27 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Management;
+using System.Threading;
 
 namespace EFDaemon
 {
-    static class Daemon
+    class Daemon
     {
         // NOTE: -unqiuetoken is only a "marker" to find the right process in case of more than one RelicCoH Process
-        private static string steamarguments = "-applaunch 317600 -daemonmode";
-        private static string steamfilename = "Steam";
+        static string steamarguments = "-applaunch 317600 -daemonmode";
+        static string steamfilename = "Steam";
+        static string cohfilename = "RelicCoH";
+        static string cohfilename2 = "RelicCoH.exe";
+        static int timeouttime = 60;
+        static uint pid;
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd, out uint ProcessId);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
 
         static void Main(string[] args)
         {
@@ -17,13 +30,49 @@ namespace EFDaemon
 
             foreach (string arg in args)
             {
+                // Did the other exe start us?
                 if (arg == "-daemonmode")
                 {
-                    // Did the other exe start us?
-                    // This delay might seem weird, 
-                    // but we don't know how long Steam takes to change game states
-                    System.Threading.Thread.Sleep(30000);
+                    int timer = 0;
+                    Process[] coh_processes;
+                    Process Unique_Process = null;
 
+                    // Prepare in case we have more than two processes
+                    string wmiQuery = string.Format("select ProcessId, Name, CommandLine from Win32_Process where Name='{0}'", cohfilename);
+                    // Start scanning for RelicCOH.exe
+                    while (true)
+                    {
+                        coh_processes = Process.GetProcessesByName(cohfilename);
+                        // Can only be one really, because Company of Heroes will only allow one
+                        if (coh_processes.Length > 0)
+                        {
+                            ManagementClass mgmtClass = new ManagementClass("Win32_Process");
+
+                            foreach (ManagementObject process in mgmtClass.GetInstances())
+                            {
+                                // Basics - process name & pid
+                                string processName = process["Name"].ToString().ToLower();
+                                if ((cohfilename2.ToLower()) == processName)
+                                {
+                                    pid = (uint)process["ProcessId"];
+                                    Unique_Process = Process.GetProcessById((int)pid);
+                                    if (ProcessHadWindow(pid) && ApplicationIsActivated(pid))
+                                        goto endOfLoop;
+                                }
+                            }
+                        }
+                        // Wait 2000 ticks
+                        Thread.Sleep(2000);
+                        timer++;
+
+                        // We failed to find the process... pause then break
+                        if (timer >= timeouttime)
+                        {
+                            break;
+                        }
+                    }
+
+                    endOfLoop:
                     Process[] steam_processes = Process.GetProcessesByName(steamfilename);
 
                     if (steam_processes.Length == 0)
@@ -48,6 +97,22 @@ namespace EFDaemon
                     steam_process.Start();
                 }
             }
+        }
+        static bool ProcessHadWindow(uint pid)
+        {
+            return (Process.GetProcessById((int)pid).MainWindowHandle.ToInt32() != 0); // if the handle is 0; no window has spawned yet!
+        }
+
+        static bool ApplicationIsActivated(uint pid)
+        {
+            var activatedHandle = GetForegroundWindow();
+            if (activatedHandle == IntPtr.Zero)
+                return false; // No window is currently activated
+
+            uint activeProcId;
+            GetWindowThreadProcessId(activatedHandle, out activeProcId);
+
+            return activeProcId == pid;
         }
     }
 }
