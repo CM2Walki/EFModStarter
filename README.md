@@ -23,14 +23,14 @@ To fully grasp the structure of the program, we first have to look at the way St
 3. Steamfriends displays Company of Heroes (New Steam Version)
 
 # The Workaround
-To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts the _CoHEF.exe_ after a fixed delay, for it then to reclaim it's spot as the last game launched. In the end we end up with a structure like this:
+To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts the _CoHEF.exe_ after the CoH window spawns and is focused. It will end up being the last game launched and thus be displayed by Steam. In the end we end up with a structure like this:
 
 1. Start _CoHEF.exe_
 2. _CoHEF.exe_ launches _RelicCoH.exe_ (with parameters _-mod (...)_ and _-uniquetoken (later used)_ AND _EFDaemon.exe_.
 3. _CoHEF.exe_ shuts down
 4. Steamfriends displays Company of Heroes (New Steam Version)
-5. After a ~30 seconds wait, the _EFDaemon.exe_ restarts the _CoHEF.exe_ with a different parameter, thus taking the place of last game launched.
-6. Steamfriends will now display Company of Heroes: Eastern Front
+5. EFDaemon.exe waits for CoH process to spawn a window and for it to be selected by the player; Then restarts the CoHEF.exe
+6. Steamfriends will then display Company of Heroes: Eastern Front
 
 # The Achievements
 The launcher uses the [Steamworks.NET API library](https://steamworks.github.io/). This will obviously only work if your .exe is launched via Steam. The _CoHEF.exe_ itself is only responsible for writting changes to Steam that were read from the _pipeline.dat_. It does **not** read directly from the game! The _pipeline.dat_ is written to by SCAR, to make this work you will need both a pure Lua JSON library and the lua-io library (you can find those in the EF_Bin folder).
