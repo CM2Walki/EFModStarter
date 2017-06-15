@@ -30,33 +30,29 @@ namespace CoHEF
     class CoHEF
     {
         // Variables
-        private static int timeouttime = 10;
-        private static int timeouttime_end = 5;
-        private static string steamfilename = "Steam";
-        private static string cohfilename = "RelicCoH";
-        private static string cohfilename2 = "RelicCoH.exe";
-        private static string bugsplat_report = "BsSndRpt";
-        private static string ef_version_locale_key = "18030216";
-        // private static string auth_key = "wd3DEcjqgeYqFWTUWsS6r37ja62F2EzZBGZnar9hSfNULp3hXXvUJdxY9qKrG7a9eEqAvmr6ucPRAaU5LD99ep6huyUysV7YuYBpmwWASVajk3g9JUqdtRhQbN8kCgueZnNWxQ8LhbSAF4JeUSSAvU4P4PmgGkkpzXUtnYwqt55FbJ9LyNJvc9WWNnbWz3WVpvpHvaufdrKAkUtgvvuAjpvPu3qAtRxjCGVkVeGpXJmenzcCRKCfmcZuYBBVZxJ32Xa87m45mwEjCQvaKmGf5qtkZcgvCpSdNqKWtsFCgcJSFZg6mgWfuVUFfZ3VP6D47NQAwVrdL9AYLHtSwQvv2VSQTzjEfz6J9TssE4gw2bvmugEkWGKGBDX6m6cPGv4v2AhGR4xjwkky25HYz7D7j4y2AYwqZQ8uYa2pnLj2qT3Wwx9zrk8F4czSBzpDhz6kfqZJvnXRXBCWSZsaKsuykSSs2BjAKvfnfTwVwYYz3pBCwBdWeVrrSmX34Xv26ZQT";
-        private static string auth_key = ""; // Removed for GitHub release
+        static int timeouttime = 10;
+        static int timeouttime_end = 8;
+        static string steamfilename = "Steam";
+        static string cohfilename = "RelicCoH";
+        static string cohfilename2 = "RelicCoH.exe";
+        static string bugsplat_report = "BsSndRpt";
+        static string ef_version_locale_key = "18030216";
+
+        static string auth_key = ""; // Removed for GitHub release
 
         // NOTE: -unqiuetoken is only a "marker" to find the right process in case of more than one RelicCoH Process
-        private static string steamarguments = "-applaunch 228200 -dev -mod EF_beta -uniquetoken";
+        static string steamarguments = "-applaunch 228200 -dev -mod EF_beta -uniquetoken";
 
         static void Main(string[] args)
         {
             // Make sure we can only have one running at a time
-            if (Process.GetProcessesByName(System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1) Environment.Exit(0);
+            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1) Environment.Exit(0);
 
-            // Get EF version
-            string version_string = getversion();
-
-            var webClient = new System.Net.WebClient();
-            string url = "http://me2stats.eu:5020/join?version=" + version_string + "&key=" + auth_key;
-
-            string file = getpipelinedir();
-            File.WriteAllText(file, string.Empty); // Empty the pipeline.dat
-
+            checklocation(); // Make sure EF is installed in the right place
+            string version_string = getversion(); // Get EF version
+            string file = getpipelinedir(); // Get the achievement pipeline.dat
+            File.WriteAllText(file, string.Empty); // Empty the pipeline.dat; or create it
+            
             foreach (string arg in args)
             {
                 if (arg == "-cheat")
@@ -72,6 +68,18 @@ namespace CoHEF
                 }
                 else if (arg == "-daemonmode")
                 {
+                    var webClient = new System.Net.WebClient();
+                    string url = "http://me2stats.eu:5020/join?version=" + version_string + "&key=" + auth_key;
+                    // Tell server that we started the game
+                    try
+                    {
+                        webClient.DownloadStringAsync(new Uri(url));
+                    }
+                    catch (Exception)
+                    {
+                        // Suppress weberrors, could be no internet etc.
+                    }
+
                     bool steamapi_state = SteamAPI.Init();
                     bool achievements_state = SteamUserStats.RequestCurrentStats();
                     // Use this to reset all achievements
@@ -101,7 +109,7 @@ namespace CoHEF
                                 string processName = process["Name"].ToString().ToLower();
                                 if ((cohfilename2.ToLower()) == processName)
                                 {
-                                    UInt32 pid = (UInt32)process["ProcessId"];
+                                    uint pid = (uint)process["ProcessId"];
                                     Unique_Process = Process.GetProcessById((int)pid);
                                     // Get the command line - can be null if we don't have permissions
                                     string cmdLine = null;
@@ -126,10 +134,12 @@ namespace CoHEF
                             Environment.Exit(1);
                         }
                     }
+
                     endOfLoop:
+
                     if (steamapi_state)
                     {
-                        // Update steamid
+                        // Update steamid (for custom scar function)
                         CSteamID steamid = SteamUser.GetSteamID();
                         string scarfile = getscardir();
 
@@ -241,8 +251,8 @@ namespace CoHEF
                             break;
                         }
 
-                        // Wait 2000 Ticks
-                        Thread.Sleep(2000);
+                        // Wait 1000 Ticks
+                        Thread.Sleep(1000);
                         timer++;
 
                         // We failed to find the process... So no crash
@@ -258,15 +268,6 @@ namespace CoHEF
             }
 
             Process[] steam_processes;
-            // Tell server that we started the game
-            try
-            { 
-                webClient.DownloadStringAsync(new Uri(url));
-            }
-            catch (Exception)
-            {
-                // Suppress weberrors, could be no internet etc.
-            }
 
             // Try to find our Steam process
             steam_processes = Process.GetProcessesByName(steamfilename);
@@ -326,7 +327,25 @@ namespace CoHEF
             }
         }
 
-        public static string getscardir()
+        static void checklocation()
+        {
+            // Check if coh is installed here
+            string path_to_dir = Directory.GetCurrentDirectory();
+            string path_to_module = path_to_dir + "\\RelicCoH.module";
+
+            if (!File.Exists(path_to_module))
+            {
+                path_to_dir = Path.GetFullPath(Path.Combine(path_to_dir, @"..\"));
+                path_to_module = path_to_dir + "\\RelicCoH.module";
+                if (!File.Exists(path_to_module))
+                {
+                    if (MessageBox.Show("Unable to find RelicCoH! \nMake sure Company of Heroes: Eastern Front is installed in the same directory as Company of Heroes (New Steam Version)!", "Company of Heroes: Eastern Front", MessageBoxButtons.OK, MessageBoxIcon.Error) == DialogResult.OK)
+                        Environment.Exit(0); // Exit
+                }
+            } 
+        }
+
+        static string getscardir()
         {
             string path_to_dir = Directory.GetCurrentDirectory();
             string path_to_scar = path_to_dir + "\\EF_beta\\Data\\scar\\steam.scar";
@@ -339,7 +358,7 @@ namespace CoHEF
             return path_to_scar;
         }
 
-        public static string getpipelinedir()
+        static string getpipelinedir()
         {
             string path_to_dir = Directory.GetCurrentDirectory();
             string path_to_scar = path_to_dir + "\\pipeline.dat";
@@ -352,7 +371,7 @@ namespace CoHEF
             return path_to_scar;
         }
 
-        public static string getversion()
+        static string getversion()
         {
             // Get Eastern Front version
             string path_to_dir;
@@ -400,7 +419,7 @@ namespace CoHEF
             return version_string;
         }
 
-        public static List<List<string>> add_properties(RootObject p_obj)
+        static List<List<string>> add_properties(RootObject p_obj)
         {
             List<List<string>> achievements_bool = new List<List<string>>();
             achievements_bool.Add(p_obj.feld_steiner);
