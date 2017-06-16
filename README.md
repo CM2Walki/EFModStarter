@@ -23,7 +23,7 @@ To fully grasp the structure of the program, we first have to look at the way St
 3. Steamfriends displays Company of Heroes (New Steam Version)
 
 # The Workaround
-To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts the _CoHEF.exe_ after the CoH window spawns and is focused. It will end up being the last game launched and thus be displayed by Steam. In the end we end up with a structure like this:
+To tackle this problem, a second .exe (_EFDaemon_) is introduced that restarts the _CoHEF.exe_ after the CoH window spawns and is focused. It will end up being the last game launched and thus be displayed by Steam. We end up with a structure like this:
 
 1. Start _CoHEF.exe_
 2. _CoHEF.exe_ launches _RelicCoH.exe_ (with parameters _-mod (...)_ and _-uniquetoken (later used)_ AND _EFDaemon.exe_.
