@@ -11,15 +11,14 @@ using System.Collections.Generic;
 /*-----------------------------------------------------------------------
 -- Company of Heroes: Eastern Front Steam Starter
 --
--- (c) ARCH Ltd. - Archaic Entertainment Ltd. 2016
+-- (c) ARCH Ltd. - Archaic Entertainment Ltd. 2017
 --
 -- Programmers: Walentin 'Walki' L.
 -----------------------------------------------------------------------
--- To-Do: Update images
+-- To-Do:
 -----------------------------------------------------------------------
 INFO: 
 -- Remember that this executable is located in the RelicCoH folder
--- This program will register the player in our database
 -- Then it will call Steam to start RelicCoH with the Eastern Front mod
 -- 
 -----------------------------------------------------------------------
@@ -27,18 +26,27 @@ INFO:
 
 namespace CoHEF
 {
+    /// <summary>
+    /// Startup class. Called when starting CoHEF.exe
+    /// </summary>
     class CoHEF
     {
-        // Variables
+        /// <summary>
+        /// Time to wait once we launched coh with the EF parameters, until we abort
+        /// </summary>
         static int timeouttime = 10;
-        static int timeouttime_end = 8;
+        /// <summary>
+        /// Steam name, later used in GetProcessesByName()
+        /// </summary>
         static string steamfilename = "Steam";
+        /// <summary>
+        /// CoH name, later used in GetProcessesByName()
+        /// </summary>
         static string cohfilename = "RelicCoH";
+        /// <summary>
+        /// CoH name, later used to compare against results from wmi query
+        /// </summary>
         static string cohfilename2 = "RelicCoH.exe";
-        static string bugsplat_report = "BsSndRpt";
-        static string ef_version_locale_key = "18030216";
-
-        static string auth_key = ""; // Removed for GitHub release
 
         // NOTE: -unqiuetoken is only a "marker" to find the right process in case of more than one RelicCoH Process
         static string steamarguments = "-applaunch 228200 -dev -mod EF_beta -uniquetoken";
@@ -49,48 +57,33 @@ namespace CoHEF
             if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1) Environment.Exit(0);
 
             checklocation(); // Make sure EF is installed in the right place
-            string version_string = getversion(); // Get EF version
             string file = getpipelinedir(); // Get the achievement pipeline.dat
             File.WriteAllText(file, string.Empty); // Empty the pipeline.dat; or create it
             
+            // Iterate arguments
             foreach (string arg in args)
             {
-                if (arg == "-cheat")
+                if (arg == "-cheat") // Check if we have the -cheat argument set
                 {
-                    bool steamapi_state = SteamAPI.Init();
-                    bool achievements_state = SteamUserStats.RequestCurrentStats();
-                    if (steamapi_state && achievements_state)
+                    // Grant "CHEATER!!" achievement
+                    bool steamapi_state = SteamAPI.Init(); // Initialise Steam API
+                    bool achievements_state = SteamUserStats.RequestCurrentStats(); // Retrieve current stats-state
+                    if (steamapi_state && achievements_state) // Check status of both
                     {
-                        SteamUserStats.SetAchievement("cheatmod");
-                        SteamUserStats.StoreStats();
+                        SteamUserStats.SetAchievement("cheatmod"); // Grant achievement
+                        SteamUserStats.StoreStats(); // Commit achievements
                     }
-                    SteamAPI.Shutdown();
+                    SteamAPI.Shutdown(); // Close API
                 }
-                else if (arg == "-daemonmode")
+                else if (arg == "-daemonmode") // Check if we started with the -daemonmode (background)
                 {
-                    var webClient = new System.Net.WebClient();
-                    string url = "http://me2stats.eu:5020/join?version=" + version_string + "&key=" + auth_key;
-                    // Tell server that we started the game
-                    try
-                    {
-                        webClient.DownloadStringAsync(new Uri(url));
-                    }
-                    catch (Exception)
-                    {
-                        // Suppress weberrors, could be no internet etc.
-                    }
-
-                    bool steamapi_state = SteamAPI.Init();
-                    bool achievements_state = SteamUserStats.RequestCurrentStats();
-                    // Use this to reset all achievements
-                    // SteamUserStats.ResetAllStats(true); 
-                    // SteamUserStats.StoreStats();
+                    bool steamapi_state = SteamAPI.Init(); // Initialise Steam API 
+                    bool achievements_state = SteamUserStats.RequestCurrentStats(); // Retrieve current stats-state
                     // Stuff we need for the loop
                     int timer = 0;
                     Process[] coh_processes;
-                    Process[] bugsplat_processes;
                     Process Unique_Process = null;
-
+                    
                     // Prepare in case we have more than two processes
                     string wmiQuery = string.Format("select ProcessId, Name, CommandLine from Win32_Process where Name='{0}'", cohfilename);
                     // Start scanning for RelicCOH.exe
@@ -98,11 +91,11 @@ namespace CoHEF
                     {
                         // Can only be one really, because Company of Heroes will only allow one
                         coh_processes = Process.GetProcessesByName(cohfilename);
-
-                        if (coh_processes.Length > 0)
+                        
+                        if (coh_processes.Length > 0) // Make sure we actually found one
                         {
                             ManagementClass mgmtClass = new ManagementClass("Win32_Process");
-
+                            // Iterate all Processes and try to find our RelicCoH.exe
                             foreach (ManagementObject process in mgmtClass.GetInstances())
                             {
                                 // Basics - process name & pid
@@ -137,6 +130,7 @@ namespace CoHEF
 
                     endOfLoop:
 
+                    // Readout steamid and create file
                     if (steamapi_state)
                     {
                         // Update steamid (for custom scar function)
@@ -213,55 +207,8 @@ namespace CoHEF
                         Unique_Process.WaitForExit();
                     }
 
-                    // Tell the server we shutdown the game
-                    url = "http://me2stats.eu:5020/leave?key=" + auth_key;
-
-                    try
-                    {
-                        webClient.DownloadStringAsync(new Uri(url));
-                    }
-                    catch (Exception)
-                    {
-                        // Suppress weberrors, could be no internet etc.
-                    }
-
                     // Reset timer
                     timer = 0;
-
-                    // CoH has closed... Did it crash?
-                    // If yes we have to keep running until the BugReport is sent
-                    // Start scanning for BsSndRpt.exe
-                    while (true)
-                    {
-                        bugsplat_processes = Process.GetProcessesByName(bugsplat_report);
-                        // There can only be one
-                        if (bugsplat_processes.Length > 0)
-                        {
-                            // Tell the server that the game crashed
-                            url = "http://me2stats.eu:5020/reportcrash?version=" + version_string + "&key=" + auth_key;
-                            try
-                            {
-                                webClient.DownloadStringAsync(new Uri(url));
-                            }
-                            catch (Exception)
-                            {
-                                // Suppress weberrors, could be no internet etc.
-                            }
-                            bugsplat_processes[0].WaitForExit();
-                            break;
-                        }
-
-                        // Wait 1000 Ticks
-                        Thread.Sleep(1000);
-                        timer++;
-
-                        // We failed to find the process... So no crash
-                        if (timer >= timeouttime_end)
-                        {
-                            SteamAPI.Shutdown();
-                            Environment.Exit(0);
-                        }
-                    }
                     SteamAPI.Shutdown();
                     Environment.Exit(0);
                 }
@@ -326,7 +273,9 @@ namespace CoHEF
                 EFDaemon.Start();
             }
         }
-
+        /// <summary>
+        /// Try to find the path to the RelicCoH module
+        /// </summary>
         static void checklocation()
         {
             // Check if coh is installed here
@@ -344,7 +293,10 @@ namespace CoHEF
                 }
             } 
         }
-
+        /// <summary>
+        /// Find the path to the steam.scar file
+        /// </summary>
+        /// <returns>path to steam.scar</returns>
         static string getscardir()
         {
             string path_to_dir = Directory.GetCurrentDirectory();
@@ -357,7 +309,10 @@ namespace CoHEF
             }
             return path_to_scar;
         }
-
+        /// <summary>
+        /// Find the path to the pipeline.dat file
+        /// </summary>
+        /// <returns>path to pipeline.dat</returns>
         static string getpipelinedir()
         {
             string path_to_dir = Directory.GetCurrentDirectory();
@@ -370,55 +325,11 @@ namespace CoHEF
             }
             return path_to_scar;
         }
-
-        static string getversion()
-        {
-            // Get Eastern Front version
-            string path_to_dir;
-            path_to_dir = Directory.GetCurrentDirectory();
-            // Append the path to the locale
-            string path_to_locale = path_to_dir + "\\EF_beta\\Locale\\English\\Eastern_Front.English.ucs";
-
-            string version_string = "";
-            string line;
-            StreamReader file;
-            // Open file and read lines
-            try
-            {
-                file = new StreamReader(path_to_locale);
-            }
-            catch (DirectoryNotFoundException)
-            {
-                path_to_dir = Path.GetFullPath(Path.Combine(path_to_dir, @"..\"));
-                path_to_locale = path_to_dir + "\\EF_beta\\Locale\\English\\Eastern_Front.English.ucs";
-                file = new StreamReader(path_to_locale);
-            }
-
-            using (file)
-            {
-                while ((line = file.ReadLine()) != null)
-                {
-                    if (line.Contains(ef_version_locale_key))
-                    {
-                        // We found our version line
-                        version_string = line;
-
-                        // Cut the version
-                        version_string = version_string.Substring(version_string.Length - 7);
-                        break;
-                    }
-                    else
-                    {
-                        // If we failed to find then it's 0.0.0.0 = undefined
-                        version_string = "0.0.0.0";
-                    }
-                }
-            }
-            // Remove dots
-            version_string = version_string.Replace(".", "");
-            return version_string;
-        }
-
+        /// <summary>
+        /// List containing the states of all the achievements parsed from a JSON
+        /// </summary>
+        /// <param name="p_obj"></param>
+        /// <returns>achievements list</returns>
         static List<List<string>> add_properties(RootObject p_obj)
         {
             List<List<string>> achievements_bool = new List<List<string>>();

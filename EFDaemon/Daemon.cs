@@ -7,15 +7,41 @@ using System.Threading;
 
 namespace EFDaemon
 {
+    /// <summary>
+    /// Second background exe, responsible for restarting CoHEF.exe in daemonmode
+    /// </summary>
     class Daemon
     {
-        // NOTE: -unqiuetoken is only a "marker" to find the right process in case of more than one RelicCoH Process
+        /// <summary>
+        /// NOTE: -unqiuetoken is only a "marker" to find the right process in case of more than one RelicCoH Process
+        /// </summary>
         static string steamarguments = "-applaunch 317600 -daemonmode";
+        /// <summary>
+        /// Steam name, later used in GetProcessesByName()
+        /// </summary>
         static string steamfilename = "Steam";
+        /// <summary>
+        /// CoH name, later used in GetProcessesByName()
+        /// </summary>
         static string cohfilename = "RelicCoH";
+        /// <summary>
+        /// CoH name, later used to compare against results from wmi query
+        /// </summary>
         static string cohfilename2 = "RelicCoH.exe";
         static int timeouttime = 60;
         static uint pid;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(HandleRef hWnd, [In, Out] ref RECT rect);
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd, out uint ProcessId);
@@ -56,7 +82,7 @@ namespace EFDaemon
                                 {
                                     pid = (uint)process["ProcessId"];
                                     Unique_Process = Process.GetProcessById((int)pid);
-                                    if (ProcessHadWindow(pid) && ApplicationIsActivated(pid))
+                                    if (ProcessHasWindow(pid))
                                         goto endOfLoop;
                                 }
                             }
@@ -73,6 +99,7 @@ namespace EFDaemon
                     }
 
                     endOfLoop:
+                    Thread.Sleep(2000);
                     Process[] steam_processes = Process.GetProcessesByName(steamfilename);
 
                     if (steam_processes.Length == 0)
@@ -98,21 +125,14 @@ namespace EFDaemon
                 }
             }
         }
-        static bool ProcessHadWindow(uint pid)
+        /// <summary>
+        /// Check if the process had created a window yet
+        /// </summary>
+        /// <param name="pid"></param>
+        /// <returns></returns>
+        static bool ProcessHasWindow(uint pid)
         {
             return (Process.GetProcessById((int)pid).MainWindowHandle.ToInt32() != 0); // if the handle is 0; no window has spawned yet!
-        }
-
-        static bool ApplicationIsActivated(uint pid)
-        {
-            var activatedHandle = GetForegroundWindow();
-            if (activatedHandle == IntPtr.Zero)
-                return false; // No window is currently activated
-
-            uint activeProcId;
-            GetWindowThreadProcessId(activatedHandle, out activeProcId);
-
-            return activeProcId == pid;
         }
     }
 }
